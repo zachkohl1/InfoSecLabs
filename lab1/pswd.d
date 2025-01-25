@@ -1,0 +1,1 @@
+pswd.o: pswd.cpp
