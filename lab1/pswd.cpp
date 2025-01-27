@@ -131,7 +131,6 @@ int main(int argc, char* argv[])
         } 
         else if(!command.compare("changepass"))
         {
-            string new_username;
             string new_password;
             string new_encrypted_password;
 
@@ -146,8 +145,17 @@ int main(int argc, char* argv[])
             }
             new_encrypted_password = sha256(new_password);
 
-            cout << "Password changed successfully." << endl;
-            changePassword(username, password, encrypted_password, new_password, new_encrypted_password);
+            if(changePassword(username, password, encrypted_password, new_password, new_encrypted_password))
+            {
+                // Update password
+                password = new_password;
+                encrypted_password = new_encrypted_password;
+                cout << "Password changed successfully." << endl;
+            }
+            else
+            {
+                cout << "Password change failed." << endl;
+            }
         } 
         else if(!command.compare("logout"))
         {
@@ -259,8 +267,14 @@ static void addUser(const string& username, const string& password, const string
         exit(EXIT_FAILURE);
     }
 
+    // Go to end of file
+    password_file.seekp(0, ios::end);
+
     // Append the new user to the password file
     password_file << username << DELIMITERS << password << endl;
+
+    // Go to end of file
+    password_encrypted_file.seekp(0, ios::end);
     password_encrypted_file << username << DELIMITERS << encrypted_password << endl;
 
     password_file.close();
@@ -302,12 +316,13 @@ static bool changePassword(const string& username, const string& old_password, c
         }
     }
 
+    string line1;
     // Process encrypted password file
-    while (getline(password_encrypted_file, line))
+    while (getline(password_encrypted_file, line1))
     {
-        size_t pos = line.find(DELIMITERS);
-        string stored_username = line.substr(0, pos);
-        string stored_encrypted_password = line.substr(pos + 1);
+        size_t pos = line1.find(DELIMITERS);
+        string stored_username = line1.substr(0, pos);
+        string stored_encrypted_password = line1.substr(pos + 1);
 
         if (stored_username == username && stored_encrypted_password == old_encrypted_password)
         {
@@ -315,7 +330,7 @@ static bool changePassword(const string& username, const string& old_password, c
         }
         else
         {
-            temp_encrypted_file << line << endl;
+            temp_encrypted_file << line1 << endl;
         }
     }
 
