@@ -267,19 +267,44 @@ static void addUser(const string& username, const string& password, const string
         exit(EXIT_FAILURE);
     }
 
-    // Go to end of file
-    password_file.seekp(0, ios::end);
+    // Check if the password file has content
+    ifstream check_password_file(PASSWORD_FILE);
+    if (check_password_file.seekg(0, ios::end).tellg() > 0)
+    {
+        check_password_file.seekg(-1, ios::end);
+        char lastChar;
+        check_password_file.get(lastChar);
+        if (lastChar != '\n') 
+        {
+            password_file << endl;
+        }
+    }
+    check_password_file.close();
 
     // Append the new user to the password file
-    password_file << username << DELIMITERS << password << endl;
+    password_file << username << DELIMITERS << password;
 
-    // Go to end of file
-    password_encrypted_file.seekp(0, ios::end);
-    password_encrypted_file << username << DELIMITERS << encrypted_password << endl;
+    // Check if the encrypted password file has content
+    ifstream check_password_encrypted_file(PASSWORD_ENCRYPTED_FILE);
+    if (check_password_encrypted_file.seekg(0, ios::end).tellg() > 0)
+    {
+        check_password_encrypted_file.seekg(-1, ios::end);
+        char lastChar;
+        check_password_encrypted_file.get(lastChar);
+        if (lastChar != '\n') 
+        {
+            password_encrypted_file << endl;
+        }
+    }
+    check_password_encrypted_file.close();
+
+    // Append the new user to the encrypted password file
+    password_encrypted_file << username << DELIMITERS << encrypted_password;
 
     password_file.close();
     password_encrypted_file.close();
 }
+
 
 
 static bool changePassword(const string& username, const string& old_password, const string& old_encrypted_password, const string& new_password, const string& new_encrypted_password)
