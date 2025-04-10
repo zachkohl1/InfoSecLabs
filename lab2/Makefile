@@ -1,21 +1,49 @@
-CC=g++
-CFLAGS=-c -Wall -g
-LDFLAGS=-lssl -lcrypto
-SOURCES=Server2.cpp aes.cpp
-OBJECTS=$(SOURCES:.cpp=.o)
-EXECUTABLE=server
+# Compiler and flags
+CXX = g++
+CXXFLAGS = -Wall -Wextra -std=c++17
+LIBS = -lssl -lcrypto
 
-all: $(SOURCES) $(EXECUTABLE) 
+# Directories
+SRC = .
+ACTIVE = ./active
+UPDATES = ./updates
 
-# pull in dependency info for *existing* .o files
--include $(OBJECTS:.o=.d)
+# Source files
+SERVER_V1_SRC = $(SRC)/server.cpp $(SRC)/aes.cpp
+SERVER_V2_SRC = $(SRC)/server_v2.cpp $(SRC)/server_base.cpp $(SRC)/aes.cpp
+CLIENT_V1_SRC = $(SRC)/client.cpp $(SRC)/aes.cpp
+CLIENT_V2_SRC = $(SRC)/client_v2.cpp $(SRC)/aes.cpp
 
-$(EXECUTABLE): $(OBJECTS)
-	$(CC) $(OBJECTS) $(LDFLAGS) -o $@
+# Targets
+all: active/client active/server updates/client_v2 updates/server_v2
 
-.cpp.o: 
-	$(CC) $(CFLAGS) $< -o $@
-	$(CC) -MM $< > $*.d
+# Version 1
+active/server: $(SERVER_V1_SRC)
+	mkdir -p $(ACTIVE)
+	$(CXX) $(CXXFLAGS) $^ -o $@ $(LIBS)
 
+active/client: $(CLIENT_V1_SRC)
+	mkdir -p $(ACTIVE)
+	$(CXX) $(CXXFLAGS) $^ -o $@ $(LIBS)
+
+# Version 2
+updates/server_v2: $(SERVER_V2_SRC)
+	mkdir -p $(UPDATES)
+	$(CXX) $(CXXFLAGS) $^ -o $@ $(LIBS)
+
+updates/client_v2: $(CLIENT_V2_SRC)
+	mkdir -p $(UPDATES)
+	$(CXX) $(CXXFLAGS) $^ -o $@ $(LIBS)
+
+# Clean
 clean:
-	rm -rf $(OBJECTS) $(EXECUTABLE) *.d
+	# Remove everything in updates except .log files
+	find $(UPDATES) -type f ! -name '*.log' -delete
+
+	# Remove all .o, .sig, and top-level .log files (but not ones in active)
+	rm -f *.o *.sig ./*.log
+
+	# Remove binaries from active, but NOT transactions.log
+	find $(ACTIVE) -type f ! -name 'transactions.log' -delete
+
+.PHONY: all clean

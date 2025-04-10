@@ -4,6 +4,7 @@
 #include <string.h>
 #include <iostream>
 #include <openssl/rand.h>
+#include "aes.hpp"
 using namespace std;
 
 int encrypt(const unsigned char *plaintext, int plaintext_len, unsigned char * key, unsigned char *iv, unsigned char *ciphertext)

@@ -1,3 +1,5 @@
+#include <openssl/evp.h>
+#include <openssl/hmac.h>
 #include <openssl/sha.h>
 #include <iostream>
 #include <fstream>
@@ -19,6 +21,9 @@ static int generateRandomNumber(void);
 static void encryptPasswordFile(void);
 static void addUser(const string& username, const string& password, const string& encrypted_password);
 static bool changePassword(const string& username, const string& old_password, const string& old_encrypted_password, const string& new_password, const string& new_encrypted_password);
+static string superHash(const string &password);
+static string sha3_256(const string &str);
+static string hmac_sha256(const string &data, const string &key);
 /**
  * Requirements
  * 1. Your program will prompt the user for username and password. You will need to make a password.txt file to 
@@ -65,7 +70,7 @@ int main(int argc, char* argv[])
     cin >> password;
 
     // Let's first encrypt the password with SHA256
-    encrypted_password = sha256(password);
+    encrypted_password = superHash(password);
 
     // Search for the user in the encrypted password file
     user_found = searchUser(username, encrypted_password);
@@ -416,4 +421,56 @@ bool isValidPassword(const string &password) {
     // $                : End of string
 
     return regex_match(password, pattern);
+}
+
+static string sha256(const string &str) {
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    SHA256_CTX sha256;
+    SHA256_Init(&sha256);
+    SHA256_Update(&sha256, str.c_str(), str.size());
+    SHA256_Final(hash, &sha256);
+    std::stringstream hex_stream;
+    for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
+        hex_stream << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
+    }
+    return hex_stream.str();
+}
+// New SHA3-256 function
+static string sha3_256(const string &str) {
+    unsigned char hash[32]; // SHA3-256 outputs 32 bytes
+    EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
+    EVP_DigestInit_ex(mdctx, EVP_sha3_256(), NULL);
+    EVP_DigestUpdate(mdctx, str.c_str(), str.size());
+    EVP_DigestFinal_ex(mdctx, hash, NULL);
+    EVP_MD_CTX_free(mdctx);
+    std::stringstream hex_stream;
+    for (int i = 0; i < 32; i++) {
+        hex_stream << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
+    }
+    return hex_stream.str();
+}
+
+// New HMAC-SHA2-256 function
+static string hmac_sha256(const string &data, const string &key) {
+    unsigned char *result;
+    unsigned int len = 32; // SHA256 output length
+    result = HMAC(EVP_sha256(), key.c_str(), key.size(), 
+                  (unsigned char*)data.c_str(), data.size(), NULL, NULL);
+    std::stringstream hex_stream;
+    for (int i = 0; i < len; i++) {
+        hex_stream << std::hex << std::setw(2) << std::setfill('0') << (int)result[i];
+    }
+    return hex_stream.str();
+}
+
+// SuperHash combining all three
+static string superHash(const string &password) {
+    string sha2_result = sha256(password);
+
+    string sha3_result = sha3_256(sha2_result);
+
+    string hmac_key = "fixedsecretkey123"; // In practice, use a secure key
+
+    string super_hash = hmac_sha256(sha3_result, hmac_key);
+    return super_hash;
 }
