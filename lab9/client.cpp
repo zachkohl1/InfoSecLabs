@@ -39,7 +39,31 @@ int main(int argc, char *argv[])
 {
     int num_requests = 15;    // Default number of requests
     bool attack_mode = false; // Flag for DoS attack simulation
+    std::string lb_host = SERVER_HOST; // Default to common.h value
 
+    // Check for command line arguments: client <lb_ip> [num_requests]
+    if (argc < 2) {
+        std::cerr << "Usage: " << argv[0] << " <load_balancer_ip> [number_of_requests=15]" << std::endl;
+        std::cerr << "Using default LB host: " << lb_host << std::endl;
+         // Allow falling back to default for simplicity, or exit(1)
+         // exit(1);
+    } else {
+         lb_host = argv[1]; // Use the provided IP
+         std::cout << "[Client] Target Load Balancer IP: " << lb_host << std::endl;
+         if (argc > 2) { // Optional number of requests
+            try {
+                num_requests = std::stoi(argv[2]);
+                if (num_requests <= 0) {
+                    std::cerr << "Error: Number of requests must be positive." << std::endl;
+                    return 1;
+                }
+            } catch (...) { // Catch potential stoi errors
+                std::cerr << "Error: Invalid number format for requests." << std::endl;
+                std::cerr << "Usage: " << argv[0] << " <load_balancer_ip> [number_of_requests=15]" << std::endl;
+                return 1;
+            }
+         }
+    }
     // Parse command-line arguments
     for (int i = 1; i < argc; ++i)
     {
@@ -74,49 +98,40 @@ int main(int argc, char *argv[])
         }
     }
 
-    for (int i = 1; i <= num_requests; ++i)
-    {
+    for (int i = 1; i <= num_requests; ++i) {
         SOCKET client_sock = INVALID_SOCKET;
         struct sockaddr_in lb_addr;
         char buffer[BUFFER_SIZE];
 
         // 1. Create socket
         client_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-        if (client_sock == INVALID_SOCKET)
-        {
-            print_socket_error("Client socket creation failed");
-            std::this_thread::sleep_for(std::chrono::seconds(1));
-            continue;
-        }
+        // ... (error check) ...
 
-        // 2. Prepare Load Balancer address
+        // 2. Prepare Load Balancer address using lb_host
         memset(&lb_addr, 0, sizeof(lb_addr));
         lb_addr.sin_family = AF_INET;
         lb_addr.sin_port = htons(LB_PORT);
-        if (inet_pton(AF_INET, SERVER_HOST.c_str(), &lb_addr.sin_addr) <= 0)
-        {
-            print_socket_error("Client invalid LB address format");
-            close_socket(client_sock);
-            std::this_thread::sleep_for(std::chrono::seconds(1));
-            continue;
+        // Use the lb_host variable here!
+        if (inet_pton(AF_INET, lb_host.c_str(), &lb_addr.sin_addr) <= 0) {
+             print_socket_error("Client invalid LB address format");
+             close_socket(client_sock);
+             std::this_thread::sleep_for(std::chrono::seconds(1));
+             continue;
         }
 
         // 3. Connect to Load Balancer
-        if (connect(client_sock, (struct sockaddr *)&lb_addr, sizeof(lb_addr)) == SOCKET_ERROR)
-        {
-            if (errno == ECONNREFUSED)
-            {
+         if (connect(client_sock, (struct sockaddr*)&lb_addr, sizeof(lb_addr)) == SOCKET_ERROR) {
+            // ... connection refused message should now show the correct target IP ...
+             if (errno == ECONNREFUSED) {
                 std::cerr << "[Client] Connection refused. Is the Load Balancer running on "
-                          << SERVER_HOST << ":" << LB_PORT << "?" << std::endl;
-            }
-            else
-            {
-                print_socket_error("Client connect to LB failed");
-            }
-            close_socket(client_sock);
-            std::this_thread::sleep_for(std::chrono::seconds(2));
-            continue;
-        }
+                          << lb_host << ":" << LB_PORT << "?" << std::endl; // Show correct IP
+             } else {
+                 print_socket_error(("Client connect to LB (" + lb_host + ") failed").c_str());
+             }
+             close_socket(client_sock);
+             std::this_thread::sleep_for(std::chrono::seconds(2));
+             continue;
+         }
 
         std::cout << "[Client] Connected to Load Balancer (socket: " << client_sock << ")." << std::endl;
 
