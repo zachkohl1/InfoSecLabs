@@ -9,10 +9,10 @@ ACTIVE = ./active
 UPDATES = ./updates
 
 # Source files
-SERVER_V1_SRC = $(SRC)/server.cpp $(SRC)/aes.cpp
-SERVER_V2_SRC = $(SRC)/server_v2.cpp $(SRC)/server_base.cpp $(SRC)/aes.cpp
-CLIENT_V1_SRC = $(SRC)/client.cpp $(SRC)/aes.cpp
-CLIENT_V2_SRC = $(SRC)/client_v2.cpp $(SRC)/aes.cpp
+SERVER_V1_SRC = $(SRC)/server.cpp $(SRC)/aes.cpp $(SRC)/srp.cpp
+SERVER_V2_SRC = $(SRC)/server_v2.cpp $(SRC)/aes.cpp $(SRC)/srp.cpp
+CLIENT_V1_SRC = $(SRC)/client.cpp $(SRC)/aes.cpp $(SRC)/srp.cpp
+CLIENT_V2_SRC = $(SRC)/client_v2.cpp $(SRC)/aes.cpp $(SRC)/srp.cpp
 
 # Targets
 all: active/client active/server updates/client_v2 updates/server_v2

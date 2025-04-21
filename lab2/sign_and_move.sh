@@ -12,15 +12,17 @@ CLIENT_PUB="client_public.pem"
 SERVER_PUB="server_public.pem"
 SERVER_PUB_TARGET="../server_public.pem"  # Used by the server at runtime
 
-# Check key presence
+# Check key presence and generate if missing
 if [[ ! -f "$CLIENT_PRIV" ]]; then
-  echo "[ERROR] Missing client private key: $CLIENT_PRIV"
-  exit 1
+  echo "[INFO] Generating client private key: $CLIENT_PRIV"
+  openssl ecparam -name prime256v1 -genkey | openssl ec -out "$CLIENT_PRIV"
+  echo "[OK] Created client private key."
 fi
 
 if [[ ! -f "$SERVER_PRIV" ]]; then
-  echo "[ERROR] Missing server private key: $SERVER_PRIV"
-  exit 1
+  echo "[INFO] Generating server private key: $SERVER_PRIV"
+  openssl ecparam -name prime256v1 -genkey | openssl ec -out "$SERVER_PRIV"
+  echo "[OK] Created server private key."
 fi
 
 mkdir -p "$UPDATES_DIR"
