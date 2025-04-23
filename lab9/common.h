@@ -25,11 +25,11 @@
 
 // --- Configuration ---
 #define NUM_SERVERS 5 // Number of backend servers
-#define LB_PORT 8080 // Port the Load Balancer listens on
+#define LB_PORT 8888 // Port the Load Balancer listens on
 #define BASE_SERVER_PORT 9000 // Starting port for backend servers
 #define BUFFER_SIZE 1024 // Max message size
 
-const std::string SERVER_HOST = "172.27.11.127"; // Assuming all run on localhost
+const std::string SERVER_HOST = "192.168.1.10"; // Assuming all run on localhost
 
 // DoS Detection Parameters
 const int MAX_CONNECTIONS_PER_IP = 10;         // Max connections allowed per IP in the time window
